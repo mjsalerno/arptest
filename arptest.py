@@ -1,10 +1,8 @@
-import socket
+#!/usr/bin/env python\
+import argparse
 import fcntl
-import struct
 import netaddr
-from scapy.layers.l2 import arping
 from scapy.all import *
-import threading
 
 from arpthread import Arpthread
 
@@ -23,30 +21,48 @@ def get_ipaddress(ifname):
     )[20:24])
 
 
-ifname = 'wlp1s0'
+def main():
 
-mask = get_netmask(ifname)
-ip = get_ipaddress(ifname)
+    parser = argparse.ArgumentParser(description='man on the side attack detector.')
+    parser.add_argument('-i', '--ifname', help='interface to use', type=str,
+                    required=False, default='wlp1s0')
 
-print('mask: ' + mask)
-print('ip: ' + ip)
+    parser.add_argument('-o', '--out-file', help="file to write live ip's to",
+                    type=str, required=False, default='live-ips.txt')
 
-ip = netaddr.IPNetwork(ip + '/' + mask)
-print(ip)
+    parser.add_argument('-c', '--connections', help='how many connections to have at once',
+                    type=int, required=False, default=50)
 
-threads = []
-ips = list(ip)
+    args = parser.parse_args()
 
-for i in range(len(ips)):
-    addy = str(ips[i])
-    t = Arpthread(addy)
-    t.start()
-    threads.append(t)
+    # ifname = 'wlp1s0'
+    ifname = args.ifname
 
-    if i % 50 == 0:
-        print 'join : ' + str(i) + '/' + str(len(ips))
-        for t in threads:
-            t.join()
-            threads.remove(t)
+    mask = get_netmask(ifname)
+    ip = get_ipaddress(ifname)
+
+    print('mask: ' + mask)
+    print('ip: ' + ip)
+
+    ip = netaddr.IPNetwork(ip + '/' + mask)
+    print(ip)
+
+    threads = []
+    ips = list(ip)
+
+    for i in range(len(ips)):
+        addy = str(ips[i])
+        t = Arpthread(addy)
+        t.start()
+        threads.append(t)
+
+        if i % args.connections == 0:
+            print 'join : ' + str(i) + '/' + str(len(ips))
+            for t in threads:
+                t.join()
+                threads.remove(t)
+
+if __name__ == "__main__":
+    main()
 
 
