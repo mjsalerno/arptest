@@ -127,3 +127,5 @@ target/
 Session.vim
 .netrwhist
 *~
+
+*.txt

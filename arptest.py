@@ -1,4 +1,4 @@
-#!/usr/bin/env python\
+#!/usr/bin/env python
 import argparse
 import fcntl
 import netaddr
@@ -35,7 +35,6 @@ def main():
 
     args = parser.parse_args()
 
-    # ifname = 'wlp1s0'
     ifname = args.ifname
 
     mask = get_netmask(ifname)
@@ -49,6 +48,8 @@ def main():
 
     threads = []
     ips = list(ip)
+    found_ips = []
+    outfile = open(args.out_file, 'w')
 
     for i in range(len(ips)):
         addy = str(ips[i])
@@ -61,6 +62,12 @@ def main():
             for t in threads:
                 t.join()
                 threads.remove(t)
+                if t.found_ip is not None:
+                    found_ips.append(t.found_ip)
+
+    print 'found ' + str(len(found_ips)) + ' IPs'
+    outfile.write('\n'.join(found_ips))
+    outfile.close()
 
 if __name__ == "__main__":
     main()
