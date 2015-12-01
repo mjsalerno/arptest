@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 import argparse
 import fcntl
+import threading
+import subprocess
+from operator import sub
+
 import netaddr
 from scapy.all import *
+from scapy.layers.inet import IP, ICMP
 from scapy.layers.l2 import arping
-
-from arpthread import Arpthread
 
 
 def get_netmask(ifname):
@@ -22,6 +25,29 @@ def get_ipaddress(ifname):
     )[20:24])
 
 
+def clear_cache_timer(n):
+    a = subprocess.Popen(['ip', 'neigh', 'flush', 'all'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if a == 0:
+        threading.Timer(n, clear_cache_timer, [n]).start()
+    else:
+        print 'COULD NOT CLEAR ARP CACHE'
+        print a.communicate()
+        sys.exit(1)
+
+
+def ping(ip):
+    ans,unans=sr(IP(dst="130.245.113.20")/ICMP(), timeout=1)
+    return len(ans) > 0
+
+
+def ping_rnd(lst):
+    ip = random.choice(lst)
+
+    if not ping(ip):
+        print 'IP DOES NOT RESPOND TO PING: ' + str(ip)
+        lst.remove(ip)
+
+
 def main():
 
     parser = argparse.ArgumentParser(description='man on the side attack detector.')
@@ -30,6 +56,9 @@ def main():
 
     parser.add_argument('-o', '--out-file', help="file to write live ip's to",
                     type=str, required=False, default='live-ips.txt')
+
+    parser.add_argument('-t', '--cache-clear-interv', help="how long to wait before clearing the ARP cache",
+                    type=int, required=False, default=0)
 
     args = parser.parse_args()
 
@@ -45,20 +74,19 @@ def main():
     print(ip)
 
     found_ips = []
-    arp_cache = {}
     outfile = open(args.out_file, 'w')
 
     ans, unans = arping(str(ip.network) + '/' + str(ip.prefixlen))
 
     for i in ans:
         found_ips.append(i[0][ARP].pdst)
-        arp_cache[i[0][ARP].pdst] = i[1][ARP].hwsrc
 
     print 'found ' + str(len(found_ips)) + ' IPs'
     outfile.write('\n'.join(found_ips))
     outfile.close()
 
-    print arp_cache
+    if args.cache_clear_interv > 0:
+        clear_cache_timer(args.cache_clear_interv)
 
 if __name__ == "__main__":
     main()
