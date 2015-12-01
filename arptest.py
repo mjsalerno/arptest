@@ -3,6 +3,7 @@ import argparse
 import fcntl
 import netaddr
 from scapy.all import *
+from scapy.layers.l2 import arping
 
 from arpthread import Arpthread
 
@@ -30,9 +31,6 @@ def main():
     parser.add_argument('-o', '--out-file', help="file to write live ip's to",
                     type=str, required=False, default='live-ips.txt')
 
-    parser.add_argument('-c', '--connections', help='how many connections to have at once',
-                    type=int, required=False, default=50)
-
     args = parser.parse_args()
 
     ifname = args.ifname
@@ -46,28 +44,21 @@ def main():
     ip = netaddr.IPNetwork(ip + '/' + mask)
     print(ip)
 
-    threads = []
-    ips = list(ip)
     found_ips = []
+    arp_cache = {}
     outfile = open(args.out_file, 'w')
 
-    for i in range(len(ips)):
-        addy = str(ips[i])
-        t = Arpthread(addy)
-        t.start()
-        threads.append(t)
+    ans, unans = arping(str(ip.network) + '/' + str(ip.prefixlen))
 
-        if i % args.connections == 0:
-            print 'join : ' + str(i) + '/' + str(len(ips))
-            for t in threads:
-                t.join()
-                threads.remove(t)
-                if t.found_ip is not None:
-                    found_ips.append(t.found_ip)
+    for i in ans:
+        found_ips.append(i[0][ARP].pdst)
+        arp_cache[i[0][ARP].pdst] = i[1][ARP].hwsrc
 
     print 'found ' + str(len(found_ips)) + ' IPs'
     outfile.write('\n'.join(found_ips))
     outfile.close()
+
+    print arp_cache
 
 if __name__ == "__main__":
     main()
