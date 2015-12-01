@@ -1,10 +1,8 @@
 #!/usr/bin/env python
+
 import argparse
 import fcntl
 import threading
-import subprocess
-from operator import sub
-
 import netaddr
 from scapy.all import *
 from scapy.layers.inet import IP, ICMP
@@ -39,7 +37,7 @@ def clear_cache_timer(n):
 
 def ping(ip):
     print 'sending ping to: ' + str(ip)
-    ans, unans = sr(IP(dst=ip)/ICMP(), timeout=1, verbose=False)
+    ans, unans = sr(IP(dst=ip) / ICMP(), timeout=1, verbose=False)
     return len(ans) > 0
 
 
@@ -62,19 +60,18 @@ def ping_rnd_timer(n, lst):
 
 
 def main():
-
     parser = argparse.ArgumentParser(description='man on the side attack detector.')
     parser.add_argument('-i', '--ifname', help='interface to use', type=str,
-                    required=False, default='wlp1s0')
+                        required=False, default='wlp1s0')
 
     parser.add_argument('-o', '--out-file', help="file to write live ip's to",
-                    type=str, required=False, default=None)
+                        type=str, required=False, default=None)
 
     parser.add_argument('-t', '--cache-clear-interv', help="how long to wait before clearing the ARP cache",
-                    type=int, required=False, default=0)
+                        type=int, required=False, default=0)
 
     parser.add_argument('-p', '--ping-interv', help="how long to wait before pinging the next random IP",
-                    type=int, required=False, default=0)
+                        type=int, required=False, default=0)
 
     args = parser.parse_args()
 
@@ -114,7 +111,6 @@ def main():
     if args.ping_interv > 0:
         ping_rnd_timer(args.ping_interv, found_ips)
 
+
 if __name__ == "__main__":
     main()
-
-
