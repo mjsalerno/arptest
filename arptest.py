@@ -26,17 +26,20 @@ def get_ipaddress(ifname):
 
 
 def clear_cache_timer(n):
+    print 'clearing ARP cache'
     a = subprocess.Popen(['ip', 'neigh', 'flush', 'all'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if a == 0:
+    io = a.communicate()
+    if len(io[1]) == 0:
         threading.Timer(n, clear_cache_timer, [n]).start()
     else:
         print 'COULD NOT CLEAR ARP CACHE'
-        print a.communicate()
+        print io
         sys.exit(1)
 
 
 def ping(ip):
-    ans,unans=sr(IP(dst="130.245.113.20")/ICMP(), timeout=1)
+    print 'sending ping to: ' + str(ip)
+    ans, unans = sr(IP(dst=ip)/ICMP(), timeout=1, verbose=False)
     return len(ans) > 0
 
 
@@ -46,6 +49,16 @@ def ping_rnd(lst):
     if not ping(ip):
         print 'IP DOES NOT RESPOND TO PING: ' + str(ip)
         lst.remove(ip)
+
+
+def ping_rnd_timer(n, lst):
+    if len(lst) < 1:
+        print 'THE LIST IS EMPTY'
+        sys.exit(1)
+
+    else:
+        ping_rnd(lst)
+        threading.Timer(n, ping_rnd_timer, [n, lst]).start()
 
 
 def main():
@@ -58,6 +71,9 @@ def main():
                     type=str, required=False, default='live-ips.txt')
 
     parser.add_argument('-t', '--cache-clear-interv', help="how long to wait before clearing the ARP cache",
+                    type=int, required=False, default=0)
+
+    parser.add_argument('-p', '--ping-interv', help="how long to wait before pinging the next random IP",
                     type=int, required=False, default=0)
 
     args = parser.parse_args()
@@ -87,6 +103,9 @@ def main():
 
     if args.cache_clear_interv > 0:
         clear_cache_timer(args.cache_clear_interv)
+
+    if args.ping_interv > 0:
+        ping_rnd_timer(args.ping_interv, found_ips)
 
 if __name__ == "__main__":
     main()
