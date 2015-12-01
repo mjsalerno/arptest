@@ -68,7 +68,7 @@ def main():
                     required=False, default='wlp1s0')
 
     parser.add_argument('-o', '--out-file', help="file to write live ip's to",
-                    type=str, required=False, default='live-ips.txt')
+                    type=str, required=False, default=None)
 
     parser.add_argument('-t', '--cache-clear-interv', help="how long to wait before clearing the ARP cache",
                     type=int, required=False, default=0)
@@ -90,20 +90,27 @@ def main():
     print(ip)
 
     found_ips = []
-    outfile = open(args.out_file, 'w')
 
+    # scan whole network for live computers
     ans, unans = arping(str(ip.network) + '/' + str(ip.prefixlen))
 
+    # record all of the live IP's
     for i in ans:
         found_ips.append(i[0][ARP].pdst)
 
     print 'found ' + str(len(found_ips)) + ' IPs'
-    outfile.write('\n'.join(found_ips))
-    outfile.close()
 
+    # write the IP's to a file if requested
+    if args.out_file is not None:
+        outfile = open(args.out_file, 'w')
+        outfile.write('\n'.join(found_ips))
+        outfile.close()
+
+    # schedule the ARP cache clearing
     if args.cache_clear_interv > 0:
         clear_cache_timer(args.cache_clear_interv)
 
+    # schedule the pinging
     if args.ping_interv > 0:
         ping_rnd_timer(args.ping_interv, found_ips)
 
