@@ -7,6 +7,7 @@ import netaddr
 from scapy.all import *
 from scapy.layers.inet import IP, ICMP
 from scapy.layers.l2 import arping
+from pythonwifi.iwlibs import Wireless
 
 
 def get_netmask(ifname):
@@ -56,10 +57,13 @@ def ping_rnd_timer(n, lst):
 
     else:
         ping_rnd(lst)
-        threading.Timer(n, ping_rnd_timer, [n, lst]).start()
+        mu = -1 * n * math.log(random.random())
+        print 'mu: ' + str(mu)
+        threading.Timer(mu, ping_rnd_timer, [n, lst]).start()
 
 
 def main():
+    #status.noc.stonybrook.edu
     parser = argparse.ArgumentParser(description='man on the side attack detector.')
     parser.add_argument('-i', '--ifname', help='interface to use', type=str,
                         required=False, default='wlp1s0')
@@ -70,7 +74,7 @@ def main():
     parser.add_argument('-t', '--cache-clear-interv', help="how long to wait before clearing the ARP cache",
                         type=int, required=False, default=0)
 
-    parser.add_argument('-p', '--ping-interv', help="how long to wait before pinging the next random IP",
+    parser.add_argument('-m', '--mu', help="how long to wait before pinging the next random IP",
                         type=int, required=False, default=0)
 
     args = parser.parse_args()
@@ -78,18 +82,18 @@ def main():
     ifname = args.ifname
 
     mask = get_netmask(ifname)
-    ip = get_ipaddress(ifname)
+    ip_str = get_ipaddress(ifname)
 
     print('mask: ' + mask)
-    print('ip: ' + ip)
+    print('ip: ' + ip_str)
 
-    ip = netaddr.IPNetwork(ip + '/' + mask)
+    ip = netaddr.IPNetwork(ip_str + '/' + mask)
     print(ip)
 
     found_ips = []
 
     # scan whole network for live computers
-    ans, unans = arping(str(ip.network) + '/' + str(ip.prefixlen))
+    ans, unans = arping(str(ip.network) + '/' + str(ip.prefixlen), iface=ifname)
 
     # record all of the live IP's
     for i in ans:
@@ -100,7 +104,15 @@ def main():
     # write the IP's to a file if requested
     if args.out_file is not None:
         outfile = open(args.out_file, 'w')
+        wifi = Wireless(ifname)
+        outfile.write('essid: ' + wifi.getEssid() + '\n')
+        outfile.write('mode: ' + wifi.getMode() + '\n')
+        outfile.write('mask: ' + mask + '\n')
+        outfile.write('ip: ' + ip_str + '\n')
+        outfile.write('network: ' + str(ip.network) + '/' + str(ip.prefixlen) + '\n')
+
         outfile.write('\n'.join(found_ips))
+        outfile.write('\n')
         outfile.close()
 
     # schedule the ARP cache clearing
@@ -108,8 +120,8 @@ def main():
         clear_cache_timer(args.cache_clear_interv)
 
     # schedule the pinging
-    if args.ping_interv > 0:
-        ping_rnd_timer(args.ping_interv, found_ips)
+    if args.mu > 0:
+        ping_rnd_timer(args.mu, found_ips)
 
 
 if __name__ == "__main__":
