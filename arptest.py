@@ -58,7 +58,6 @@ def ping_rnd_timer(n, lst):
     else:
         ping_rnd(lst)
         mu = -1 * n * math.log(random.random())
-        print 'mu: ' + str(mu)
         threading.Timer(mu, ping_rnd_timer, [n, lst]).start()
 
 
@@ -75,7 +74,7 @@ def main():
                         type=int, required=False, default=0)
 
     parser.add_argument('-m', '--mu', help="how long to wait before pinging the next random IP",
-                        type=int, required=False, default=0)
+                        type=float, required=False, default=0)
 
     args = parser.parse_args()
 
@@ -105,6 +104,7 @@ def main():
     if args.out_file is not None:
         outfile = open(args.out_file, 'w')
         wifi = Wireless(ifname)
+        outfile.write('args: ' + str(args) + '\n')
         outfile.write('essid: ' + wifi.getEssid() + '\n')
         outfile.write('mode: ' + wifi.getMode() + '\n')
         outfile.write('mask: ' + mask + '\n')
