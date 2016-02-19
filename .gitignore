@@ -131,3 +131,6 @@ Session.vim
 *.txt
 test*/
 base/
+*.html
+*.md
+*.zip
