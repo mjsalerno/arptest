@@ -8,6 +8,7 @@ from scapy.all import *
 from scapy.layers.inet import IP, ICMP
 from scapy.layers.l2 import arping
 from pythonwifi.iwlibs import Wireless
+import datetime
 
 
 def get_netmask(ifname):
@@ -25,7 +26,7 @@ def get_ipaddress(ifname):
 
 
 def clear_cache_timer(n):
-    print 'clearing ARP cache'
+    print('clearing cache: {:%Y-%b-%d %H:%M:%S}'.format(datetime.datetime.now()))
     a = subprocess.Popen(['ip', 'neigh', 'flush', 'all'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     io = a.communicate()
     if len(io[1]) == 0:
@@ -37,6 +38,7 @@ def clear_cache_timer(n):
 
 
 def ping(ip):
+    print('time sending ping: {:%Y-%b-%d %H:%M:%S}'.format(datetime.datetime.now()))
     print 'sending ping to: ' + str(ip)
     ans, unans = sr(IP(dst=ip) / ICMP(), timeout=1, verbose=False)
     return len(ans) > 0
@@ -51,6 +53,7 @@ def ping_rnd(lst):
 
 
 def ping_rnd_timer(n, lst):
+    print('thread ping going')
     if len(lst) < 1:
         print 'THE LIST IS EMPTY'
         sys.exit(1)
