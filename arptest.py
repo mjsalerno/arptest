@@ -26,32 +26,43 @@ def get_ipaddress(ifname):
 
 
 def clear_cache_timer(n):
-    print('clearing cache: {:%Y-%b-%d %H:%M:%S}'.format(datetime.datetime.now()))
-    a = subprocess.Popen(['ip', 'neigh', 'flush', 'all'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    io = a.communicate()
-    if len(io[1]) == 0:
-        threading.Timer(n, clear_cache_timer, [n]).start()
-    else:
-        print 'COULD NOT CLEAR ARP CACHE'
-        print io
-        sys.exit(1)
+    while True:
+        print('clearing cache: {:%Y-%b-%d %H:%M:%S}'.format(datetime.datetime.now()))
+        a = subprocess.Popen(['ip', 'neigh', 'flush', 'all'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        io = a.communicate()
+        if len(io[1]) != 0:
+            print(io)
+            sys.exit(1)
+        time.sleep(n)
 
 
 def ping(ip):
     print('time sending ping: {:%Y-%b-%d %H:%M:%S}'.format(datetime.datetime.now()))
-    print 'sending ping to: ' + str(ip)
+    print('sending ping to: ' + str(ip))
     ans, unans = sr(IP(dst=ip) / ICMP(), timeout=1, verbose=False)
     return len(ans) > 0
 
 
 def ping_rnd(lst):
+    if len(lst) == 0:
+        print('THE LIST IS EMPTY.')
+        sys.exit(1)
     ip = random.choice(lst)
 
     if not ping(ip):
-        print 'IP DOES NOT RESPOND TO PING: ' + str(ip)
+        print('IP DOES NOT RESPOND TO PING: ' + str(ip))
         lst.remove(ip)
 
 
+def ping_timer(n, lst):
+    while True:
+        print('pinging: {:%Y-%b-%d %H:%M:%S}'.format(datetime.datetime.now()))
+        mu = -1 * n * math.log(random.random())
+        ping_rnd(lst)
+        time.sleep(mu)
+
+
+"""
 def ping_rnd_timer(n, lst):
     print('thread ping going')
     if len(lst) < 1:
@@ -62,6 +73,7 @@ def ping_rnd_timer(n, lst):
         ping_rnd(lst)
         mu = -1 * n * math.log(random.random())
         threading.Timer(mu, ping_rnd_timer, [n, lst]).start()
+"""
 
 
 def main():
@@ -101,7 +113,7 @@ def main():
     for i in ans:
         found_ips.append(i[0][ARP].pdst)
 
-    print 'found ' + str(len(found_ips)) + ' IPs'
+    print('found ' + str(len(found_ips)) + ' IPs')
 
     # write the IP's to a file if requested
     if args.out_file is not None:
@@ -120,11 +132,24 @@ def main():
 
     # schedule the ARP cache clearing
     if args.cache_clear_interv > 0:
-        clear_cache_timer(args.cache_clear_interv)
+        t = threading.Thread(target=clear_cache_timer, args=[args.cache_clear_interv])
+        t.start()
 
     # schedule the pinging
-    if args.mu > 0:
-        ping_rnd_timer(args.mu, found_ips)
+    if args.mu <= 0:
+        sys.exit(1)
+
+    print(args.mu)
+
+    #while(True):
+    t = threading.Thread(target=ping_timer, args=[args.mu, found_ips])
+    t.start()
+    t.join()
+        #mu = -1 * args.mu * math.log(random.random())
+        #thr = threading.Timer(mu, ping_rnd, [found_ips])
+        #thr.start()
+        #print('ELLEN: ', threading.activeCount())
+        #thr.join()
 
 
 if __name__ == "__main__":
