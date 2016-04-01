@@ -4,11 +4,14 @@ import argparse
 import fcntl
 import threading
 import netaddr
+import signal
 from scapy.all import *
 from scapy.layers.inet import IP, ICMP
 from scapy.layers.l2 import arping
 from pythonwifi.iwlibs import Wireless
 import datetime
+
+count = 0
 
 
 def get_netmask(ifname):
@@ -43,40 +46,29 @@ def ping(ip):
     return len(ans) > 0
 
 
-def ping_rnd(lst):
-    if len(lst) == 0:
+def ping_rnd(a, b):
+    global ip_lst
+    global ip_index
+    if len(ip_lst) == 0:
         print('THE LIST IS EMPTY.')
         sys.exit(1)
-    ip = random.choice(lst)
 
+    ip = ip_lst[ip_index]
     if not ping(ip):
         print('IP DOES NOT RESPOND TO PING: ' + str(ip))
-        lst.remove(ip)
-
-
-def ping_timer(n, lst):
-    while True:
-        print('pinging: {:%Y-%b-%d %H:%M:%S}'.format(datetime.datetime.now()))
-        mu = -1 * n * math.log(random.random())
-        ping_rnd(lst)
-        time.sleep(mu)
-
-
-"""
-def ping_rnd_timer(n, lst):
-    print('thread ping going')
-    if len(lst) < 1:
-        print 'THE LIST IS EMPTY'
-        sys.exit(1)
-
+        del ip_lst[ip_index]
     else:
-        ping_rnd(lst)
-        mu = -1 * n * math.log(random.random())
-        threading.Timer(mu, ping_rnd_timer, [n, lst]).start()
-"""
+        ip_index += 1
+        if ip_index > (len(ip_lst) - 1):
+            ip_index = 0
+
+
+ip_lst = []
+ip_index = 0
 
 
 def main():
+    global ip_lst
     #status.noc.stonybrook.edu
     parser = argparse.ArgumentParser(description='man on the side attack detector.')
     parser.add_argument('-i', '--ifname', help='interface to use', type=str,
@@ -139,12 +131,19 @@ def main():
     if args.mu <= 0:
         sys.exit(1)
 
-    print(args.mu)
+    ip_lst = found_ips
+    signal.signal(signal.SIGALRM, ping_rnd)
+    signal.setitimer(signal.ITIMER_REAL, args.mu, args.mu)
+
+    while True:
+        signal.pause()
+
 
     #while(True):
-    t = threading.Thread(target=ping_timer, args=[args.mu, found_ips])
-    t.start()
-    t.join()
+    #t = threading.Thread(target=ping_timer, args=[args.mu, found_ips])
+    #t.start()
+    #t.join()
+    #print('successful pings: ' + count)
         #mu = -1 * args.mu * math.log(random.random())
         #thr = threading.Timer(mu, ping_rnd, [found_ips])
         #thr.start()
