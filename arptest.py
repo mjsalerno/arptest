@@ -11,8 +11,6 @@ from scapy.layers.l2 import arping
 from pythonwifi.iwlibs import Wireless
 import datetime
 
-count = 0
-
 
 def get_netmask(ifname):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -132,23 +130,13 @@ def main():
         sys.exit(1)
 
     ip_lst = found_ips
+    random.shuffle(ip_lst)
+    
     signal.signal(signal.SIGALRM, ping_rnd)
     signal.setitimer(signal.ITIMER_REAL, args.mu, args.mu)
 
     while True:
         signal.pause()
-
-
-    #while(True):
-    #t = threading.Thread(target=ping_timer, args=[args.mu, found_ips])
-    #t.start()
-    #t.join()
-    #print('successful pings: ' + count)
-        #mu = -1 * args.mu * math.log(random.random())
-        #thr = threading.Timer(mu, ping_rnd, [found_ips])
-        #thr.start()
-        #print('ELLEN: ', threading.activeCount())
-        #thr.join()
 
 
 if __name__ == "__main__":
