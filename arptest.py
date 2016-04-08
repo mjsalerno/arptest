@@ -40,8 +40,10 @@ def clear_cache_timer(n):
 def ping(ip):
     print('time sending ping: {:%Y-%b-%d %H:%M:%S}'.format(datetime.datetime.now()))
     print('sending ping to: ' + str(ip))
-    ans, unans = sr(IP(dst=ip) / ICMP(), timeout=1, verbose=False)
-    return len(ans) > 0
+    #ans, unans = sr(IP(dst=ip) / ICMP(), timeout=1, verbose=False)
+    send(IP(dst=ip) / ICMP(), verbose=False)
+    #return len(ans) > 0
+    return True
 
 
 def ping_rnd(a, b):
@@ -131,12 +133,15 @@ def main():
 
     ip_lst = found_ips
     random.shuffle(ip_lst)
-    
-    signal.signal(signal.SIGALRM, ping_rnd)
-    signal.setitimer(signal.ITIMER_REAL, args.mu, args.mu)
+
+    #signal.signal(signal.SIGALRM, ping_rnd)
+    #signal.setitimer(signal.ITIMER_REAL, args.mu, args.mu)
 
     while True:
-        signal.pause()
+        #signal.pause()
+        t = threading.Thread(target=ping_rnd, args=['', ''])
+        t.start()
+        time.sleep(args.mu)
 
 
 if __name__ == "__main__":
