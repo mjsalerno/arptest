@@ -49,16 +49,17 @@ def ping(ip):
 def ping_rnd(a, b):
     global ip_lst
     global ip_index
+    old_index = ip_index
+    ip_index += 1
     if len(ip_lst) == 0:
         print('THE LIST IS EMPTY.')
         sys.exit(1)
 
-    ip = ip_lst[ip_index]
+    ip = ip_lst[old_index]
     if not ping(ip):
         print('IP DOES NOT RESPOND TO PING: ' + str(ip))
-        del ip_lst[ip_index]
+        del ip_lst[old_index]
     else:
-        ip_index += 1
         if ip_index > (len(ip_lst) - 1):
             ip_index = 0
 
