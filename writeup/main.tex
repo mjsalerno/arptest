@@ -1,0 +1,130 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{array}
+\usepackage{wrapfig}
+\usepackage{multirow}
+\usepackage{tabu}
+\usepackage{sverb}
+\usepackage{verbatim}
+\usepackage{framed}
+\usepackage{geometry}
+\geometry{
+	a4paper,
+	total={170mm,257mm},
+	left=20mm,
+	top=20mm,
+}
+
+
+\parindent=.25in
+\parskip=2ex
+
+\title{ARP Power Consumption}
+\author{Michael Salerno}
+
+\begin{document}
+\pagestyle{empty}
+
+\maketitle
+
+\def\normalbaselines{\baselineskip20pt \lineskip3pt \lineskiplimit3pt}
+
+\def\mapright{\smash{\mathop{\longrightarrow}}}
+\def\mapincl{\smash{\mathop{\hookrightarrow}}}
+\def\mapup{\Big\uparrow}
+\def\mapdown{\Big\downarrow}
+\def\mapdowneq{\Big\parallel}
+
+\def\Mapright#1{\smash{\mathop{\longrightarrow}\limits^{#1}}}
+\def\Mapincl#1{\smash{\mathop{\hookrightarrow}\limits^{#1}}}
+\def\Mapup#1{\Big\uparrow\rlap{$\vcenter{\hbox{$\scriptstyle#1$}}$}}
+\def\Mapdown#1{\Big\downarrow\rlap{$\vcenter{\hbox{$\scriptstyle#1$}}$}}
+\def\Mapdowneq#1{\Big\parallel\rlap{$\vcenter{\hbox{$\scriptstyle#1$}}$}}
+
+\newcommand{\vsp}{\vspace{1pc}}
+\newcommand{\disp}{\displaystyle}
+
+\newcommand{\X}{{\cal X}}
+\newcommand{\Y}{{\cal Y}}
+\newcommand{\Z}{{\cal Z}}
+
+\def\pitch{\mathbin{\frown \! \! \! \! \mid \, \, \,}}
+% had to define because cant get amssymb to work...
+% replace by \pitchfork if amssymb is working
+
+% overview?
+
+\section{Introduction}
+
+This semester we researched green computing. Cooling a data centers uses the most energy (37\%) [2]. The second piece of equipment that uses the most power are the network devices. The power consumption of network devices could be lowered if we use hard state networking protocols instead of soft state.
+
+\section{Soft vs. hard states in computer networks}
+
+Many computer networking protocols have a soft and hard states. A hard state is when the protocol only notices changes in the network if it is explicitly told. A soft state is when the protocol will expire existing data if it is not told that it should still use it. For example the ARP protocol can be configured to keep its IP to MAC address forever, or have them expire after a certain amount of time and then send an ARP request if it need to use that mapping again.
+
+\section{Power consumption in computer systems}
+\subsection{CPU C States}
+
+In order to lower the power consumption of a computer the OS can put the CPU into a power saving state. The operating system can determine how much of the processor is being used and switch the C state of the processor.[13] These states include the operating, halt, enhanced halt, stop grant, stop clock, extended stop grant, sleep, deep sleep, and deep power down states. The following CPU states are included in the states of advanced configuration and power interface (ACPI).
+
+{\centering
+
+\label{c-states}
+\begin{tabular}{llll}
+\hline
+\multicolumn{1}{|l|}{Mode} & \multicolumn{1}{|l|}{Name} & \multicolumn{1}{|l|}{Desc.} & \multicolumn{1}{|l|}{CPUs} \\
+\hline
+\multicolumn{1}{|l|}{C0} & \multicolumn{1}{|l|}{Operating State} & \multicolumn{1}{|l|}{CPU fully turned on} & \multicolumn{1}{|l|}{All CPUs} \\
+\hline
+\multicolumn{1}{|l|}{C1E} & \multicolumn{1}{|l|}{Enhanced Halt} & \multicolumn{1}{|l|}{\parbox{5cm}{Stops CPU main internal clocks via software and reduces CPU voltage; bus interface unit and APIC are kept running at full speed.}} & \multicolumn{1}{|l|}{All socket LGA775 CPUs} \\
+\hline
+\multicolumn{1}{|l|}{C2} & \multicolumn{1}{|l|}{Stop Grant} & \multicolumn{1}{|l|}{\parbox{5cm}{Stops CPU main internal clocks via hardware; bus interface unit and APIC are kept running at full speed.}} & \multicolumn{1}{|l|}{486DX4 and above} \\
+\hline
+\multicolumn{1}{|l|}{C2} & \multicolumn{1}{|l|}{Stop Clock} & \multicolumn{1}{|l|}{\parbox{5cm}{Stops CPU internal and external clocks via hardware}} & \multicolumn{1}{|l|}{\parbox{5cm}{Only 486DX4, Pentium, Pentium MMX, K5, K6, K6-2, K6-III}} \\
+\hline
+\multicolumn{1}{|l|}{C3} & \multicolumn{1}{|l|}{Sleep} & \multicolumn{1}{|l|}{\parbox{5cm}{Stops all CPU internal clocks}} & \multicolumn{1}{|l|}{\parbox{5cm}{Pentium II, Athlon and above, but not on Core 2 Duo E4000 and E6000}} \\
+\hline
+\multicolumn{1}{|l|}{C3} & \multicolumn{1}{|l|}{Deep Sleep} & \multicolumn{1}{|l|}{\parbox{5cm}{Stops all CPU internal and external clocks}} & \multicolumn{1}{|l|}{\parbox{5cm}{Pentium II and above, but not on Core 2 Duo E4000 and E6000; Turion 64}} \\
+\hline
+\multicolumn{1}{|l|}{C3} & \multicolumn{1}{|l|}{AltVID} & \multicolumn{1}{|l|}{\parbox{5cm}{Stops all CPU internal clocks and reduces CPU voltage}} & \multicolumn{1}{|l|}{AMD Turion 64} \\
+\hline
+\multicolumn{1}{|l|}{C3} & \multicolumn{1}{|l|}{AltVID} & \multicolumn{1}{|l|}{\parbox{5cm}{Stops all CPU internal clocks and reduces CPU voltage}} & \multicolumn{1}{|l|}{AMD Turion 64} \\
+\hline
+\end{tabular}
+}
+
+\subsection{Powertop}
+
+Powertop is a tool that measures CPU activity and was created by Intel. It should be run on the computer you wish to know the CPU activity of. It is run from the terminal and you can pass it multiple arguments. These arguments include --time[=seconds], this argument is how many seconds you want powertop to run for, and --html[=filename] which tells powertop to create an html page to show the results. Powertop will record the top 10 power consuming processes, what C states the processor was in, if your processor can throttle itself the percentage of active CPU frequencies will be recorded, and power consuming devices will also be recorded.
+
+\section{Experiments and results}
+\subsection{ARP Script}
+A python script was created to make ARP requests and clear the ARP cache. The script first scans the network for live computers by sending an ARP request to every valid IP on the network. After a list of live IP’s is created the script then clears the ARP cache of the machine. Depending on the arguments provided, the script then periodically send ping requests and clears the ARP cache. Arguments that the script takes are -i \textless interface\textgreater{} which tells the script what NIC to use, -o \textless filename\textgreater{} this is where the list of live IP’s and network information will be dumped, -t \textless seconds\textgreater{} this is how long the script will wait before clearing the ARP cache, and -m \textless mean\textgreater{} which is how often on average the script will send out a ping. For example the command ‘./arptest.py -i wlan0 -t 20 -m .5’ will used the wlan0 NIC, clear the ARP cache every 20 seconds and send two pings roughly every second.
+
+\subsection{APR tracking script}
+A python script that runs the Linux arp command and checks if there are any differences in the arp cache table. If there are any differences then the script writes all of the cached entries into a file with a time stamp called arp\_track.txt. This runs in a loop and happens about twice a second.
+
+\subsection{Results}
+TODO
+
+\begin{thebibliography}{1}
+
+\end{thebibliography}
+
+TODO
+
+\section{Appendix}
+\begin{tiny}
+	\begin{framed}
+		arptest.py
+		\verbatiminput{arptest.py}
+	\end{framed}
+	
+	\begin{framed}
+		arp\_tracker.py
+		\verbatiminput{arp_tracker.py}
+	\end{framed}
+\end{tiny}
+
+
+\end{document}
