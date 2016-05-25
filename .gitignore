@@ -134,3 +134,6 @@ base/
 *.html
 *.md
 *.zip
+*.aux
+*.pdf
+*.gz
